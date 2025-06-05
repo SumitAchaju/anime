@@ -1,0 +1,13 @@
+Django~=5.2
+django-allauth[socialaccount]
+django-allauth-ui
+django-widget-tweaks
+slippers
+cloudinary
+django-cloudinary-storage[video]
+python-decouple
+Pillow
+django_filter
+requests
+gunicorn
+whitenoise

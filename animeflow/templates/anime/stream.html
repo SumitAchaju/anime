@@ -1,0 +1,227 @@
+{% extends 'base.html' %} {% load static %} {% load cloudinary %}
+{% load my_filters %}
+<!-- content -->
+{% block content %}
+    <!-- Breadcrumb Begin -->
+    <div class="breadcrumb-option">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="breadcrumb__links">
+                        <a href="{% url 'home' %}"><i class="fa fa-home"></i> Home</a>
+                        <a href="{% url 'anime_detail' anime.id %}">{{ anime.title }}</a>
+                        <span>Watch</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Breadcrumb End -->
+
+    <!-- Anime Section Begin -->
+    <section class="anime-details spad">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="anime__video__player">
+                        <video id="player" data-poster="{{ anime.banner_image }}">
+                        </video>
+                    </div>
+                    <div class="anime__details__episodes">
+                        <div class="section-title">
+                            <h5>List Name</h5>
+                        </div>
+                        {% for ep in anime.episodes.all|order_by:"episode_number" %}
+                            <a
+                                    style="{% if episode.episode_number == ep.episode_number %}
+                                        background-color: #ffffff;
+                                        color: #000000;
+                                    {% endif %}"
+                                    href="{% url 'anime_stream' anime.id ep.episode_number %}"
+                            >
+                                Ep {{ ep.episode_number }}
+                            </a>
+                        {% endfor %}
+
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="anime__details__review">
+                        <div class="section-title">
+                            <h5>Reviews</h5>
+                        </div>
+                        {% for comment in anime.comments.all %}
+                            <div class="anime__review__item">
+                                <div class="anime__review__item__pic">
+                                    {% cloudinary comment.user.profile crop="fill" gravity="face" width=100 height=100 alt="profile_image" %}
+                                </div>
+                                <div class="anime__review__item__text">
+                                    <h6>
+                                        {{ comment.user.first_name }} {{ comment.user.last_name }} -
+                                        <span>{{ comment.created_at|timesince }} ago</span>
+                                    </h6>
+                                    <p>{{ comment.comment }}</p>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="anime__review__item">
+                                <div class="anime__review__item__pic">
+                                    <img src="{% static 'img/anime/review-1.jpg' %}" alt=""/>
+                                </div>
+                                <div class="anime__review__item__text">
+                                    <h6>No reviews yet</h6>
+                                    <p>Be the first to review this anime!</p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="anime__details__form">
+                        <div class="section-title">
+                            <h5>Your Comment</h5>
+                        </div>
+                        <form action="#">
+                            <textarea placeholder="Your Comment"></textarea>
+                            <button type="submit">
+                                <i class="fa fa-location-arrow"></i> Review
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Anime Section End -->
+{% endblock %}
+
+<!-- player settings -->
+{% block script %}
+    <script>
+
+        async function getTaskId() {
+            const animeUrl = encodeURIComponent(
+                "{{ episode.video_url|safe }}"
+            );
+            const fetchUrl = `http://localhost:8001/getSource?path=${animeUrl}`;
+            const response = await fetch(fetchUrl);
+            if (!response.ok) {
+                throw new Error("Network response was not ok");
+            }
+
+            const data = await response.json();
+            return data.task_id;
+        }
+
+        async function getStreamUrlUntilDone(taskId) {
+            const streamUrl = `http://localhost:8001/task/${taskId}`;
+            let taskResult = null; // Initialize taskResult to null
+
+            return new Promise((resolve, reject) => {
+                let timeCount = 0;
+                const timeOutCount = 60 * 1000; // 1 minute timeout
+                const interval = 5000; // 5 seconds interval
+                const poll = setInterval(async () => {
+                    try {
+                        if (timeCount >= timeOutCount) {
+                            clearInterval(poll);
+                            reject(new Error("Timeout waiting for task completion"));
+                        }
+                        const response = await fetch(streamUrl);
+
+                        if (!response.ok) {
+                            clearInterval(poll);
+                            reject(new Error("Network response was not ok"));
+                        }
+
+                        const data = await response.json();
+
+                        if (data.state === "SUCCESS") {
+                            clearInterval(poll);
+                            taskResult = data.result;
+                            resolve(taskResult); // Resolve with the result once successful
+                        } else if (data.state === "FAILURE") {
+                            clearInterval(poll);
+                            taskResult = null;
+                            resolve(taskResult); // Resolve with null if task fails
+                        }
+                        timeCount += interval
+                    } catch (error) {
+                        clearInterval(poll);
+                        reject(error); // Reject if there is an error in fetching
+                    }
+                }, interval); // Poll every 5 seconds
+            });
+        }
+
+        async function initPlayer() {
+            const player = new Plyr("#player", {
+                controls: [
+                    "play-large",
+                    "play",
+                    "progress",
+                    "current-time",
+                    "mute",
+                    "captions",
+                    "settings",
+                    "fullscreen",
+                ],
+                captions: {active: true, update: true},
+                seekTime: 25,
+            });
+            const taskId = await getTaskId();
+            const stream = await getStreamUrlUntilDone(taskId);
+            console.log("Stream URL:", stream);
+
+            if (stream) {
+                const video = document.getElementById("player");
+                const cleanUrl = stream.url.replace(/\/+$/, ""); // removes trailing slashes
+                const baseUrl = cleanUrl.split("/");
+                const lastPart = baseUrl.pop();
+                const newBaseUrl = baseUrl.join("/");
+
+
+                stream.tracks.forEach(track => {
+                    trackElement = document.createElement("track");
+                    trackElement.src = `/proxy_file?url=${encodeURIComponent(track.file)}`;
+                    trackElement.kind = track.kind;
+                    trackElement.label = track.label;
+                    track.default ? (trackElement.default = true) : null;
+                    video.appendChild(
+                        trackElement
+                    );
+                })
+
+                const buttons = document.querySelectorAll(".plyr-settings-8843-captions.menu.plyr_control")
+
+                console.log(newBaseUrl);
+
+                const customStreamUrl = `http://localhost:8001/proxy_hls/${lastPart}?base_url=${encodeURIComponent(
+                    newBaseUrl
+                )}`;
+
+                const hls = new Hls();
+
+                hls.loadSource(customStreamUrl);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, function () {
+                    video.play();
+                });
+                // Listen to quality change events in HLS.js
+                hls.on(Hls.Events.LEVEL_SWITCHED, function (event, data) {
+                    console.log(`Quality switched to level: ${data.level}`);
+                });
+                // Error handling
+                hls.on(Hls.Events.ERROR, (event, data) => {
+                    if (data.fatal) {
+                        console.error("HLS.js error:", data);
+                    }
+                });
+            } else {
+                console.error("Failed to get stream URL.");
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", initPlayer);
+    </script>
+{% endblock %}

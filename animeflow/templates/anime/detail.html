@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load my_filters %}
+{% load cloudinary %}
+{% block content %}
+    <!-- Breadcrumb Begin -->
+    <div class="breadcrumb-option">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="breadcrumb__links">
+                        <a href="../index.html"><i class="fa fa-home"></i> Home</a>
+                        <a href="list.html">Categories</a>
+                        <span>Romance</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Breadcrumb End -->
+
+    <!-- Anime Section Begin -->
+    <section class="anime-details spad">
+        <div class="container">
+            <div class="anime__details__content">
+                <div class="row">
+                    <div class="col-lg-3">
+                        <div
+                                class="anime__details__pic set-bg"
+                                data-setbg="{{ anime.thumbnail.large }}">
+                            <div class="comment">
+                                <i class="fa fa-comments"></i> {{ anime.comments.count }}
+                            </div>
+                            <div class="view"><i class="fa fa-eye"></i> {{ anime.views }}</div>
+                        </div>
+                    </div>
+                    <div class="col-lg-9">
+                        <div class="anime__details__text">
+                            <div class="anime__details__title">
+                                <h3>{{ anime.title }}</h3>
+                                <span>{{ anime.native }}</span>
+                            </div>
+                            <div class="anime__details__rating">
+                                <div class="rating">
+                                    {% for star in anime.average_rating|times %}
+                                        <a href="#"><i class="fa fa-star"></i></a>
+                                    {% endfor %} {% if anime.average_rating|has_decimal_greater_than_0 %}
+                                    <a href="#"><i class="fa fa-star-half-o"></i></a>
+                                {% endif %}
+                                </div>
+                                <span>{{ anime.ratings.count }} Votes</span>
+                            </div>
+                            <p>{{ anime.description|safe }}</p>
+                            <div class="anime__details__widget">
+                                <div class="row">
+                                    <div class="col-lg-6 col-md-6">
+                                        <ul>
+                                            <li><span>Type:</span> {{ anime.format }}</li>
+                                            <li><span>Studios:</span> {{ anime.studio }}</li>
+                                            <li>
+                                                <span>Date aired:</span> {{ anime.release_date }} - {{ anime.end_date }}
+                                            </li>
+                                            <li><span>Status:</span> {{ anime.status }}</li>
+                                            <li>
+                                                <span>Genre:</span>
+                                                {% for genre in anime.genres.all %} {{ genre.title }}
+                                                    {% if not forloop.last %} , {% endif %} {% empty %} No
+                                                    genres available {% endfor %}
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-lg-6 col-md-6">
+                                        <ul>
+                                            <li><span>Episodes:</span> {% if anime.episodes_count is None %} Unknown {% else %} {{ anime.episodes_count }} {% endif %}</li>
+                                            <li>
+                                                <span>Rating:</span>{% if anime.rating_count %}
+                                                {{ anime.average_rating }} | {{ anime.rating_count }} {% else %}
+                                                None {% endif %}
+                                            </li>
+                                            <li><span>Duration:</span> {{ anime.duration }}</li>
+                                            <li><span>Season:</span> {{ anime.season|lower|capfirst }} , {{ anime.season_year }}</li>
+                                            <li><span>Views:</span> {{ anime.views }}</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="anime__details__btn">
+                                <a href="#" class="follow-btn"
+                                ><i class="fa fa-heart-o"></i> Follow</a
+                                >
+                                <a href="{% url 'anime_stream' anime.id 1 %}" class="watch-btn"
+                                ><span>Watch Now</span> <i class="fa fa-angle-right"></i
+                                ></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-8 col-md-8">
+                    <div class="anime__details__review">
+                        <div class="section-title">
+                            <h5>Reviews</h5>
+                        </div>
+                        {% for comment in anime.comments.all %}
+                            <div class="anime__review__item">
+                                <div class="anime__review__item__pic">
+                                    {% cloudinary comment.user.profile crop="fill" gravity="face" width=100 height=100 alt="profile_image" %}
+                                </div>
+                                <div class="anime__review__item__text">
+                                    <h6>{{ comment.user.first_name }} {{ comment.user.last_name }} -
+                                        <span>{{ comment.created_at|timesince }} ago</span></h6>
+                                    <p>
+                                        {{ comment.comment }}
+                                    </p>
+                                </div>
+                            </div>
+                        {% empty %}
+                            <div class="anime__review__item">
+                                <div class="anime__review__item__pic">
+                                    <img src="{% static 'img/anime/review-1.jpg' %}" alt=""/>
+                                </div>
+                                <div class="anime__review__item__text">
+                                    <h6>No reviews yet</h6>
+                                    <p>Be the first to review this anime!</p>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="anime__details__form">
+                        <div class="section-title">
+                            <h5>Your Comment</h5>
+                        </div>
+                        {% comment %} for adding comments {% endcomment %}
+                        {% include "anime/snippets/comment_form.html" with anime=anime %}
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-4">
+                    <div class="anime__details__sidebar">
+                        <div class="section-title">
+                            <h5>you might like...</h5>
+                        </div>
+                        <div
+                                class="product__sidebar__view__item set-bg"
+                                data-setbg="{% static 'img/sidebar/tv-1.jpg' %}"
+                        >
+                            <div class="ep">18 / ?</div>
+                            <div class="view"><i class="fa fa-eye"></i> 9141</div>
+                            <h5><a href="#">Boruto: Naruto next generations</a></h5>
+                        </div>
+                        <div
+                                class="product__sidebar__view__item set-bg"
+                                data-setbg="{% static 'img/sidebar/tv-2.jpg' %}"
+                        >
+                            <div class="ep">18 / ?</div>
+                            <div class="view"><i class="fa fa-eye"></i> 9141</div>
+                            <h5><a href="#">The Seven Deadly Sins: Wrath of the Gods</a></h5>
+                        </div>
+                        <div
+                                class="product__sidebar__view__item set-bg"
+                                data-setbg="{% static 'img/sidebar/tv-3.jpg' %}"
+                        >
+                            <div class="ep">18 / ?</div>
+                            <div class="view"><i class="fa fa-eye"></i> 9141</div>
+                            <h5>
+                                <a href="#">Sword art online alicization war of underworld</a>
+                            </h5>
+                        </div>
+                        <div
+                                class="product__sidebar__view__item set-bg"
+                                data-setbg="{% static 'img/sidebar/tv-4.jpg' %}"
+                        >
+                            <div class="ep">18 / ?</div>
+                            <div class="view"><i class="fa fa-eye"></i> 9141</div>
+                            <h5>
+                                <a href="#">Fate/stay night: Heaven's Feel I. presage flower</a>
+                            </h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Anime Section End -->
+
+{% endblock %}

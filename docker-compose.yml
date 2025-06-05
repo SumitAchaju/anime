@@ -1,0 +1,40 @@
+
+services:
+  django:
+    build: ./animeflow/
+    container_name: django
+    ports:
+      - "8000:8000"
+
+    command: gunicorn flow.wsgi:application --bind 0.0.0:8000 --workers 3
+
+
+  fastapi_proxy:
+    build: ./celery/
+    container_name: fastapi_proxy
+    depends_on:
+      - redis
+    command: gunicorn -k uvicorn.workers.UvicornWorker src.server:app --bind 0.0.0.0:8001 --workers 3
+    ports:
+      - "8001:8001"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+
+  celery:
+    build:
+      context: ./celery/
+      dockerfile: ./config/Dockerfile
+    container_name: celery
+    depends_on:
+      - redis
+    command: celery -A src.tasks worker --loglevel=info --concurrency=4
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    
+    

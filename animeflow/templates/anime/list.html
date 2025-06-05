@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+{% load static %}
+{% load my_filters %}
+
+{% block title %}
+    Anime
+    {% for field in filter.form %}
+        {% if field.name == "genre" and field.value != None %}
+            | Genre | {{ field.value|capfirst }}
+        {% endif %}
+        {% if field.name == "discover" and field.value != None %}
+            | Discover | {{ field.value|capfirst }}
+        {% endif %}
+        {% if field.name == "keyword" and field.value != None %}
+            | Search | {{ field.value|capfirst }}
+        {% endif %}
+    {% endfor %}
+{% endblock %}
+
+{% block content %}
+    <!-- Breadcrumb Begin -->
+    <div class="breadcrumb-option">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="breadcrumb__links">
+                        <a href="{% url 'home' %}"><i class="fa fa-home"></i> Home</a>
+                        {% for field in filter.form %}
+                            {% if field.name == "genre" and field.value != None %}
+                                <a href="{% url 'anime_list' %}?genre={{ field.value }}">{{ field.value|capfirst }}</a>
+                            {% endif %}
+                            {% if field.name == "discover" and field.value != None %}
+                                <a href="{% url 'anime_list' %}?discover={{ field.value }}">{{ field.value|capfirst }}</a>
+                            {% endif %}
+                        {% endfor %}
+                        {% if filter.form.keyword.name == "keyword" and filter.form.keyword.value  != None %}
+                            <a href="#" class="search-switch">Search</a>
+                            <span>{{ filter.form.keyword.value|capfirst }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Breadcrumb End -->
+
+    <!-- Product Section Begin -->
+    <section class="product-page spad">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="product__page__content">
+                        <div class="product__page__title">
+                            <div class="row">
+                                <div class="col-lg-8 col-md-8 col-sm-6">
+                                    <div class="section-title">
+                                            {% if filter.form.keyword.name == "keyword" and filter.form.keyword.value != None %}
+                                                <h4>{{ filter.form.keyword.value }}</h4>
+                                            {% elif filter.form.discover.name == "discover" and filter.form.discover.value != None %}
+                                                <h4>{{ filter.form.discover.value  }}</h4>
+                                            {% elif filter.form.genre.name == "genre" and filter.form.genre.value != None %}
+                                                <h4>{{ filter.form.genre.value }}</h4>
+                                            {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-lg-4 col-md-4 col-sm-6">
+                                    <div class="product__page__filter">
+                                        <p>Order by:</p>
+                                        <form method="get" action="{% url 'anime_list' %}" class="d-inline-block">
+                                            <select name="order_by" id="order_by" onchange="this.form.submit()">
+                                                <option value="title"
+                                                        {% if request.GET.order_by == 'title' %}selected{% endif %}>A-Z
+                                                </option>
+                                                <option value="-popularity"
+                                                        {% if request.GET.order_by == '-popularity' %}selected{% endif %}
+                                                        {% if request.GET.order_by|not_in:"title,-popularity,-release_date" %}
+                                                        selected {% endif %}>Popularity
+                                                </option>
+                                                <option value="-release_date"
+                                                        {% if request.GET.order_by == '-release_date' %}selected{% endif %}>
+                                                    Release
+                                                </option>
+                                            </select>
+
+                                            {# Preserve other filters like 'search', 'per_page' etc. #}
+                                            {% for key, value in request.GET.items %}
+                                                {% if key != "order_by" and key != "page" %}
+                                                    <input type="hidden" name="{{ key }}" value="{{ value }}">
+                                                {% endif %}
+                                            {% endfor %}
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            {% for anime in animes %}
+                                <div class="col-lg-4 col-md-6 col-sm-6">
+                                    <div class="product__item">
+                                        <div class="product__item__pic set-bg" data-setbg="{{ anime.thumbnail.large }}">
+                                            <div class="ep">{{ anime.episodes.count }} / {% if anime.episodes_count is None %} ? {% else %} {{ anime.episodes_count }} {% endif %}</div>
+                                            <div class="comment"><i
+                                                    class="fa fa-comments"></i> {{ anime.comments.count }}</div>
+                                            <div class="view"><i class="fa fa-eye"></i> {{ anime.views }}</div>
+                                        </div>
+                                        <div class="product__item__text">
+                                            <ul>
+                                                {% for genre in anime.genres.all %}
+                                                    <li>{{ genre.title }}</li>
+                                                {% endfor %}
+                                            </ul>
+                                            <h5><a href={% url 'anime_detail' anime.id %}>{{ anime.title }}</a></h5>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <div class="col-lg-12 my-5">
+                                    <h5 class="text-white text-center font-weight-bolder">No Anime Found</h5>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% if is_paginated %}
+                        <div class="product__pagination">
+                            {% if page_obj.has_previous %}
+                                <a href="?page={{ page_obj.previous_page_number }}&{% querystring_without 'page' %}"><i
+                                        class="fa fa-angle-double-left"></i></a>
+                            {% endif %}
+
+                            {# First Page #}
+                            {% if page_obj.has_previous %}
+                                <a href="?page=1&{% querystring_without 'page' %}">Start</a>
+                            {% endif %}
+
+                            {# Page numbers (show 2 before and after current page) #}
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+                                    {% if num == page_obj.number %}
+                                        <a href="?page={{ page_obj.number }}&{% querystring_without 'page' %}"
+                                           class="current-page">{{ page_obj.number }}</a>
+                                    {% else %}
+                                        <a href="?page={{ num }}&{% querystring_without 'page' %}">{{ num }}</a>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+
+                            {# Last Page #}
+                            {% if page_obj.has_next %}
+                                <a href="?page={{ page_obj.paginator.num_pages }}&{% querystring_without 'page' %}">End</a>
+                            {% endif %}
+
+                            {% if page_obj.has_next %}
+                                <a href="?page={{ page_obj.next_page_number }}&{% querystring_without 'page' %}"><i
+                                        class="fa fa-angle-double-right"></i></a>
+                            {% endif %}
+                            <div class="row mt-3 align-items-center">
+                                <div class="col-lg-6 col-12">
+                                    <span class="text-white d-block">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                                </div>
+                                <div class="col-lg-6 mt-3 mt-lg-0 col-12 d-flex gap-3 align-items-center">
+                                    <p class="text-white mb-1">Per Page: </p>
+                                    <div class="product__page__filter">
+                                        <form method="get" action="{% url 'anime_list' %}" class="d-inline-block">
+                                            <select name="size" id="size" onchange="this.form.submit()">
+                                                <option value="10" {% if request.GET.size == '10' %}selected{% endif %}>
+                                                    10
+                                                </option>
+                                                <option value="20" {% if request.GET.size == '20' %}selected{% endif %}
+                                                        {% if request.GET.size|not_in:"10,20,30,40,50" %}
+                                                        selected {% endif %}>20
+                                                </option>
+                                                <option value="30" {% if request.GET.size == '30' %}selected{% endif %}>
+                                                    30
+                                                </option>
+                                                <option value="40" {% if request.GET.size == '40' %}selected{% endif %}>
+                                                    40
+                                                </option>
+                                                <option value="50" {% if request.GET.size == '50' %}selected{% endif %}>
+                                                    50
+                                                </option>
+                                            </select>
+
+                                            {# Preserve other filters like 'search', 'per_page' etc. #}
+                                            {% for key, value in request.GET.items %}
+                                                {% if key != "size" and key != "page" %}
+                                                    <input type="hidden" name="{{ key }}" value="{{ value }}">
+                                                {% endif %}
+                                            {% endfor %}
+                                        </form>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                    {% endif %}
+
+
+                </div>
+                <div class="col-lg-4 col-md-6 col-sm-8">
+                    <div class="product__sidebar">
+                        <div class="product__sidebar__view">
+                            <div class="section-title">
+                                <h5>Top Views</h5>
+                            </div>
+                            <ul class="filter__controls">
+                                <li class="active" data-filter="*">Day</li>
+                                <li data-filter=".week">Week</li>
+                                <li data-filter=".month">Month</li>
+                                <li data-filter=".years">Years</li>
+                            </ul>
+                            <div class="filter__gallery">
+                                <div class="product__sidebar__view__item set-bg mix day years"
+                                     data-setbg="img/sidebar/tv-1.jpg">
+                                    <div class="ep">18 / ?</div>
+                                    <div class="view"><i class="fa fa-eye"></i> 9141</div>
+                                    <h5><a href="#">Boruto: Naruto next generations</a></h5>
+                                </div>
+                                <div class="product__sidebar__view__item set-bg mix month week"
+                                     data-setbg="img/sidebar/tv-2.jpg">
+                                    <div class="ep">18 / ?</div>
+                                    <div class="view"><i class="fa fa-eye"></i> 9141</div>
+                                    <h5><a href="#">The Seven Deadly Sins: Wrath of the Gods</a></h5>
+                                </div>
+                                <div class="product__sidebar__view__item set-bg mix week years"
+                                     data-setbg="img/sidebar/tv-3.jpg">
+                                    <div class="ep">18 / ?</div>
+                                    <div class="view"><i class="fa fa-eye"></i> 9141</div>
+                                    <h5><a href="#">Sword art online alicization war of underworld</a></h5>
+                                </div>
+                                <div class="product__sidebar__view__item set-bg mix years month"
+                                     data-setbg="img/sidebar/tv-4.jpg">
+                                    <div class="ep">18 / ?</div>
+                                    <div class="view"><i class="fa fa-eye"></i> 9141</div>
+                                    <h5><a href="#">Fate/stay night: Heaven's Feel I. presage flower</a></h5>
+                                </div>
+                                <div class="product__sidebar__view__item set-bg mix day"
+                                     data-setbg="img/sidebar/tv-5.jpg">
+                                    <div class="ep">18 / ?</div>
+                                    <div class="view"><i class="fa fa-eye"></i> 9141</div>
+                                    <h5><a href="#">Fate stay night unlimited blade works</a></h5>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="product__sidebar__comment">
+                            <div class="section-title">
+                                <h5>New Comment</h5>
+                            </div>
+                            <div class="product__sidebar__comment__item">
+                                <div class="product__sidebar__comment__item__pic">
+                                    <img src="img/sidebar/comment-1.jpg" alt="">
+                                </div>
+                                <div class="product__sidebar__comment__item__text">
+                                    <ul>
+                                        <li>Active</li>
+                                        <li>Movie</li>
+                                    </ul>
+                                    <h5><a href="#">The Seven Deadly Sins: Wrath of the Gods</a></h5>
+                                    <span><i class="fa fa-eye"></i> 19.141 Viewes</span>
+                                </div>
+                            </div>
+                            <div class="product__sidebar__comment__item">
+                                <div class="product__sidebar__comment__item__pic">
+                                    <img src="img/sidebar/comment-2.jpg" alt="">
+                                </div>
+                                <div class="product__sidebar__comment__item__text">
+                                    <ul>
+                                        <li>Active</li>
+                                        <li>Movie</li>
+                                    </ul>
+                                    <h5><a href="#">Shirogane Tamashii hen Kouhan sen</a></h5>
+                                    <span><i class="fa fa-eye"></i> 19.141 Viewes</span>
+                                </div>
+                            </div>
+                            <div class="product__sidebar__comment__item">
+                                <div class="product__sidebar__comment__item__pic">
+                                    <img src="img/sidebar/comment-3.jpg" alt="">
+                                </div>
+                                <div class="product__sidebar__comment__item__text">
+                                    <ul>
+                                        <li>Active</li>
+                                        <li>Movie</li>
+                                    </ul>
+                                    <h5><a href="#">Kizumonogatari III: Reiket su-hen</a></h5>
+                                    <span><i class="fa fa-eye"></i> 19.141 Viewes</span>
+                                </div>
+                            </div>
+                            <div class="product__sidebar__comment__item">
+                                <div class="product__sidebar__comment__item__pic">
+                                    <img src="img/sidebar/comment-4.jpg" alt="">
+                                </div>
+                                <div class="product__sidebar__comment__item__text">
+                                    <ul>
+                                        <li>Active</li>
+                                        <li>Movie</li>
+                                    </ul>
+                                    <h5><a href="#">Monogatari Series: Second Season</a></h5>
+                                    <span><i class="fa fa-eye"></i> 19.141 Viewes</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Product Section End -->
+{% endblock %}

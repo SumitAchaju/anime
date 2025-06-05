@@ -1,0 +1,15 @@
+<form action="{% url 'anime_add_comments' anime.id %}" method="POST">
+    {% csrf_token %}
+    <label>
+        <textarea name="comment" placeholder="Your Comment"></textarea>
+    </label>
+    <label>
+        <input type="text" name="user" value="1" hidden/>
+    </label>
+    <label>
+        <input type="text" name="anime" value={{ anime.id }} hidden/>
+    </label>
+    <button type="submit">
+        <i class="fa fa-location-arrow"></i> Review
+    </button>
+</form>
