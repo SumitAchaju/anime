@@ -103,7 +103,7 @@
             const animeUrl = encodeURIComponent(
                 "{{ episode.video_url|safe }}"
             );
-            const fetchUrl = `http://localhost:8001/getSource?path=${animeUrl}`;
+            const fetchUrl = `http://${window.location.hostname}:8001/getSource?path=${animeUrl}`;
             const response = await fetch(fetchUrl);
             if (!response.ok) {
                 throw new Error("Network response was not ok");
@@ -114,7 +114,7 @@
         }
 
         async function getStreamUrlUntilDone(taskId) {
-            const streamUrl = `http://localhost:8001/task/${taskId}`;
+            const streamUrl = `http://${window.location.hostname}:8001/task/${taskId}`;
             let taskResult = null; // Initialize taskResult to null
 
             return new Promise((resolve, reject) => {
@@ -196,7 +196,7 @@
 
                 console.log(newBaseUrl);
 
-                const customStreamUrl = `http://localhost:8001/proxy_hls/${lastPart}?base_url=${encodeURIComponent(
+                const customStreamUrl = `http://${window.location.hostname}:8001/proxy_hls/${lastPart}?base_url=${encodeURIComponent(
                     newBaseUrl
                 )}`;
 

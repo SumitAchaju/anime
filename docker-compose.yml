@@ -4,9 +4,9 @@ services:
     build: ./animeflow/
     container_name: django
     ports:
-      - "8000:8000"
+      - "80:80"
 
-    command: gunicorn flow.wsgi:application --bind 0.0.0:8000 --workers 3
+    command: gunicorn flow.wsgi:application --bind 0.0.0:80 --workers 3
 
 
   fastapi_proxy:
