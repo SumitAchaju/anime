@@ -24,6 +24,7 @@ app = FastAPI(lifespan=lifespan)
 origins = [
     "http://localhost:8000",
     "http://127.0.0.1:8000",
+    "http://ec2-52-87-73-204.compute-1.amazonaws.com"
 ]
 
 app.add_middleware(
