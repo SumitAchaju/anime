@@ -1,4 +1,4 @@
-name: Deploy to EC2 with rsync
+name: Deploy to EC2 with rsync and docker-compose
 
 on:
   push:
