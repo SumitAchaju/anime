@@ -27,7 +27,7 @@ SECRET_KEY = config("DJANGO_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config("DJANGO_DEBUG", default=False, cast=bool)
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1","ec2-18-206-34-92.compute-1.amazonaws.com"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1","ec2-34-196-113-187.compute-1.amazonaws.com"]
 
 
 # Application definition
