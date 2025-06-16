@@ -27,7 +27,7 @@ services:
     container_name: celery
     depends_on:
       - redis
-    command: celery -A src.tasks worker --loglevel=info --concurrency=4
+    command: celery -A src.tasks worker --loglevel=info --concurrency=3
     environment:
       - REDIS_URL=redis://redis:6379/0
 

@@ -70,8 +70,8 @@ def get_stream_url(url: str, task_id: str) -> str | None:
             while elapsed <= 50_000:
                 if find_m3u8():
                     break
-                page.wait_for_timeout(5_000)
-                elapsed += 5_000
+                page.wait_for_timeout(2_500)
+                elapsed += 2_500
 
             browser.close()
             setRedisValue(task_id, "finished")
